@@ -22,7 +22,7 @@ APP_NAME:=ponggers2eb
 
 #The pc compiler
 C_PC:=gcc
-C_PC_FLAGS:=-W -Wall -DPC -lSDL2
+C_PC_FLAGS:=-W -Wall -DPC -lSDL2 -fno-exceptions
 
 #The sh4 assembler, compiler and linker:
 AS:=sh4-elf-as
@@ -50,15 +50,17 @@ OBJECTS:=$(AS_SOURCES:.s=.o) $(CC_SOURCES:.c=.o) $(CXX_SOURCES:.cpp=.o)
 APP_PC:=_$(APP_NAME).elf
 
 APP_ELF:=$(APP_NAME).hhk
+APP_BIN:=$(APP_NAME).bin
 
-all: pc hhk
+all: pc hhk bin
 
 pc: $(APP_PC) Makefile
 
+bin: $(APP_BIN) Makefile
 hhk: $(APP_ELF) Makefile
 
 clean:
-	rm -f $(OBJECTS) $(APP_ELF) $(APP_PC)
+	rm -f $(OBJECTS) $(APP_ELF) $(APP_BIN) $(APP_PC)
 
 $(APP_PC):  $(CC_SOURCES) $(CXX_SOURCES) $(H_INC) $(HPP_INC)
 	$(C_PC) $(CC_SOURCES) $(CXX_SOURCES) -o $(APP_PC) $(C_PC_FLAGS)
@@ -69,6 +71,9 @@ $(APP_ELF): $(OBJECTS) $(SDK_DIR)/sdk.o linker.ld
 	$(OBJCOPY) --set-section-flags .hollyhock_description=contents,strings,readonly $(APP_ELF) $(APP_ELF)
 	$(OBJCOPY) --set-section-flags .hollyhock_author=contents,strings,readonly $(APP_ELF) $(APP_ELF)
 	$(OBJCOPY) --set-section-flags .hollyhock_version=contents,strings,readonly $(APP_ELF) $(APP_ELF)
+
+$(APP_BIN): $(OBJECTS) $(SDK_DIR)/sdk.o linker.ld
+	$(LD) --oformat binary -T linker.ld -o $@ $(LD_FLAGS) $(OBJECTS) $(SDK_DIR)/sdk.o
 
 # We're not actually building sdk.o, just telling the user they need to do it
 # themselves. Just using the target to trigger an error when the file is
@@ -92,4 +97,5 @@ $(SDK_DIR)/sdk.o:
 	@$(READELF) $@ -S | grep ".ctors" > /dev/null && echo "ERROR: Global constructors aren't supported." && rm $@ && exit 1 || exit 0
 
 #tell make that 'all' 'clean' 'hhk' and 'pc' are not actually files.
-.PHONY: all clean hhk pc
+.PHONY: all clean hhk bin pc
+
