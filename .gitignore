@@ -1,0 +1,9 @@
+#compiled files
+.bin
+.hhk
+.elf
+.o
+
+#temp files
+*~
+.*~
